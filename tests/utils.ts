@@ -3,6 +3,88 @@ import { Role, User } from "../src/service/pizzaService";
 import { Page } from "@playwright/test";
 
 export async function basicInit(page: Page) {
+  // Combined handler for /api/franchise (GET, POST)
+  await page.route(/\/api\/franchise(\?.*)?$/, async (route) => {
+    if (route.request().method() === "POST") {
+      const body = route.request().postDataJSON();
+      await route.fulfill({ json: { id: 99, ...body } });
+      return;
+    }
+    // GET: return standard franchises and stores
+    const franchiseRes = {
+      franchises: [
+        {
+          id: 2,
+          name: "LotaPizza",
+          admins: [
+            { id: "4", name: "Fran Owner", email: "franchisee@jwt.com" },
+          ],
+          stores: [
+            { id: 4, name: "Lehi", totalRevenue: 0.01 },
+            { id: 5, name: "Springville", totalRevenue: 0.02 },
+          ],
+        },
+        { id: 3, name: "PizzaCorp", stores: [{ id: 7, name: "Spanish Fork" }] },
+        { id: 4, name: "topSpot", stores: [] },
+      ],
+    };
+    expect(route.request().method()).toBe("GET");
+    await route.fulfill({ json: franchiseRes });
+  });
+
+  // Combined handler for /api/franchise/:id (GET, DELETE)
+  await page.route(/\/api\/franchise\/(\d+)$/, async (route) => {
+    if (route.request().method() === "DELETE") {
+      await route.fulfill({ status: 200, json: { success: true } });
+      return;
+    }
+    // GET: return franchise by id
+    const match = route
+      .request()
+      .url()
+      .match(/\/api\/franchise\/(\d+)$/);
+    const id = match ? match[1] : undefined;
+    let franchise: any[] | null = null;
+    if (id === "4") {
+      franchise = [
+        {
+          id: 2,
+          name: "LotaPizza",
+          admins: [
+            { id: "4", name: "Fran Owner", email: "franchisee@jwt.com" },
+          ],
+          stores: [
+            { id: 4, name: "Lehi", totalRevenue: 0.01 },
+            { id: 5, name: "Springville", totalRevenue: 0.02 },
+          ],
+        },
+      ];
+    } else {
+      franchise = [];
+    }
+    expect(route.request().method()).toBe("GET");
+    await route.fulfill({ json: franchise });
+  });
+
+  // Mock deleting a store
+  await page.route(/\/api\/franchise\/\d+\/store\/\d+$/, async (route) => {
+    if (route.request().method() === "DELETE") {
+      await route.fulfill({ status: 200, json: { success: true } });
+      return;
+    }
+    await route.fallback();
+  });
+
+  // Mock creating a store
+  await page.route(/\/api\/franchise\/\d+\/store$/, async (route) => {
+    if (route.request().method() === "POST") {
+      const body = route.request().postDataJSON();
+      await route.fulfill({ json: { id: 99, ...body } });
+      return;
+    }
+    await route.fallback();
+  });
+
   let loggedInUser: User | undefined;
   const validUsers: Record<string, User> = {
     "d@jwt.com": {
@@ -11,6 +93,13 @@ export async function basicInit(page: Page) {
       email: "d@jwt.com",
       password: "a",
       roles: [{ role: Role.Diner }],
+    },
+    "franchisee@jwt.com": {
+      id: "4",
+      name: "Fran Owner",
+      email: "franchisee@jwt.com",
+      password: "franpass",
+      roles: [{ role: Role.Franchisee }, { role: Role.Diner }],
     },
   };
 
@@ -57,27 +146,6 @@ export async function basicInit(page: Page) {
     ];
     expect(route.request().method()).toBe("GET");
     await route.fulfill({ json: menuRes });
-  });
-
-  // Standard franchises and stores
-  await page.route(/\/api\/franchise(\?.*)?$/, async (route) => {
-    const franchiseRes = {
-      franchises: [
-        {
-          id: 2,
-          name: "LotaPizza",
-          stores: [
-            { id: 4, name: "Lehi" },
-            { id: 5, name: "Springville" },
-            { id: 6, name: "American Fork" },
-          ],
-        },
-        { id: 3, name: "PizzaCorp", stores: [{ id: 7, name: "Spanish Fork" }] },
-        { id: 4, name: "topSpot", stores: [] },
-      ],
-    };
-    expect(route.request().method()).toBe("GET");
-    await route.fulfill({ json: franchiseRes });
   });
 
   // Order a pizza.
