@@ -38,7 +38,7 @@ test("admin can delete a franchise", async ({ page }) => {
 
   // Click close/delete franchise
   await page.getByRole("button", { name: /close/i }).first().click();
-  await page.getByRole("button", { name: /confirm/i }).click();
+  await page.getByRole("button", { name: "Close" }).click();
 
   // Should not see deleted franchise
   await expect(page.locator("table")).not.toContainText("LotaPizza");
