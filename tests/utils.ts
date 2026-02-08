@@ -93,3 +93,61 @@ export async function basicInit(page: Page) {
 
   await page.goto("/");
 }
+
+export async function adminInit(page: Page) {
+  let loggedInUser: User | undefined;
+  const validUsers: Record<string, User> = {
+    "admin@jwt.com": {
+      id: "1",
+      name: "Admin User",
+      email: "admin@jwt.com",
+      password: "adminpass",
+      roles: [{ role: Role.Admin }],
+    },
+  };
+
+  // Authorize login for the given user
+  await page.route("*/**/api/auth", async (route) => {
+    const loginReq = route.request().postDataJSON();
+    const user = validUsers[loginReq.email];
+    if (!user || user.password !== loginReq.password) {
+      await route.fulfill({ status: 401, json: { error: "Unauthorized" } });
+      return;
+    }
+    loggedInUser = validUsers[loginReq.email];
+    const loginRes = {
+      user: loggedInUser,
+      token: "abcdef",
+    };
+    expect(route.request().method()).toBe("PUT");
+    await route.fulfill({ json: loginRes });
+  });
+
+  // Return the currently logged in user
+  await page.route("*/**/api/user/me", async (route) => {
+    expect(route.request().method()).toBe("GET");
+    await route.fulfill({ json: loggedInUser });
+  });
+
+  // Standard franchises and stores
+  await page.route(/\/api\/franchise(\?.*)?$/, async (route) => {
+    const franchiseRes = {
+      franchises: [
+        {
+          id: 2,
+          name: "LotaPizza",
+          admins: [{ id: "1", name: "Admin User", email: "admin@jwt.com" }],
+          stores: [
+            { id: 4, name: "Lehi", totalRevenue: 0.01 },
+            { id: 5, name: "Springville", totalRevenue: 0.02 },
+          ],
+        },
+      ],
+      more: false,
+    };
+    expect(route.request().method()).toBe("GET");
+    await route.fulfill({ json: franchiseRes });
+  });
+
+  await page.goto("/");
+}

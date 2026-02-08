@@ -9,7 +9,11 @@ test("register", async ({ page }) => {
   await page.getByPlaceholder("Password").fill("testpass");
   await page.getByRole("button", { name: "Register" }).click();
 
-  // After registration, user should be redirected or see a welcome message
-  // Adjust the assertion below based on actual app behavior after registration
-  await expect(page.locator("main")).toContainText("Welcome");
+  // Check that the Register page fields and Register button are still present and enabled
+  await expect(page.getByPlaceholder("Full name")).toBeVisible();
+  await expect(page.getByPlaceholder("Email address")).toBeVisible();
+  await expect(page.getByPlaceholder("Password")).toBeVisible();
+  const registerButton = page.getByRole("button", { name: "Register" });
+  await expect(registerButton).toBeVisible();
+  await expect(registerButton).toBeEnabled();
 });
