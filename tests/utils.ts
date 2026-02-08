@@ -148,8 +148,26 @@ export async function basicInit(page: Page) {
     await route.fulfill({ json: menuRes });
   });
 
-  // Order a pizza.
+  // Order history and order creation
   await page.route("*/**/api/order", async (route) => {
+    if (route.request().method() === "GET") {
+      // Return order history
+      const orderHistory = {
+        orders: [
+          {
+            id: 23,
+            items: [
+              { id: 1, title: "Veggie", price: 0.0038 },
+              { id: 2, title: "Pepperoni", price: 0.0042 },
+            ],
+            date: new Date(),
+          },
+        ],
+      };
+      await route.fulfill({ json: orderHistory });
+      return;
+    }
+    // POST: create order
     const orderReq = route.request().postDataJSON();
     const orderRes = {
       order: { ...orderReq, id: 23 },
@@ -197,24 +215,59 @@ export async function adminInit(page: Page) {
     await route.fulfill({ json: loggedInUser });
   });
 
-  // Standard franchises and stores
-  await page.route(/\/api\/franchise(\?.*)?$/, async (route) => {
-    const franchiseRes = {
-      franchises: [
-        {
-          id: 2,
-          name: "LotaPizza",
-          admins: [{ id: "1", name: "Admin User", email: "admin@jwt.com" }],
-          stores: [
-            { id: 4, name: "Lehi", totalRevenue: 0.01 },
-            { id: 5, name: "Springville", totalRevenue: 0.02 },
-          ],
-        },
+  // Standard franchises and stores, plus create/delete
+  let franchises = [
+    {
+      id: 2,
+      name: "LotaPizza",
+      admins: [{ id: "1", name: "Admin User", email: "admin@jwt.com" }],
+      stores: [
+        { id: 4, name: "Lehi", totalRevenue: 0.01 },
+        { id: 5, name: "Springville", totalRevenue: 0.02 },
       ],
-      more: false,
-    };
-    expect(route.request().method()).toBe("GET");
-    await route.fulfill({ json: franchiseRes });
+    },
+  ];
+
+  await page.route(/\/api\/franchise(\?.*)?$/, async (route) => {
+    if (route.request().method() === "POST") {
+      const body = route.request().postDataJSON();
+      const adminEmail =
+        body.admins && body.admins[0] && body.admins[0].email
+          ? body.admins[0].email
+          : "franchisee@jwt.com";
+      const newFranchise = {
+        id: Math.floor(Math.random() * 1000) + 10,
+        name: body.name,
+        admins: [{ id: "2", email: adminEmail, name: "Franchisee Admin" }],
+        stores: [],
+      };
+      franchises.push(newFranchise);
+      await route.fulfill({ json: newFranchise });
+      return;
+    }
+    // GET: return franchises
+    await route.fulfill({ json: { franchises, more: false } });
+  });
+
+  await page.route(/\/api\/franchise\/(\d+)$/, async (route) => {
+    if (route.request().method() === "DELETE") {
+      const match = route
+        .request()
+        .url()
+        .match(/\/api\/franchise\/(\d+)$/);
+      const id = match ? parseInt(match[1]) : undefined;
+      franchises = franchises.filter((f) => f.id !== id);
+      await route.fulfill({ status: 200, json: { success: true } });
+      return;
+    }
+    // GET: return franchise by id
+    const match = route
+      .request()
+      .url()
+      .match(/\/api\/franchise\/(\d+)$/);
+    const id = match ? parseInt(match[1]) : undefined;
+    const franchise = franchises.filter((f) => f.id === id);
+    await route.fulfill({ json: franchise });
   });
 
   await page.goto("/");
