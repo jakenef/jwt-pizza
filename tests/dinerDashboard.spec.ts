@@ -15,8 +15,8 @@ test("diner dashboard shows balance and order history", async ({ page }) => {
   await page.getByRole("link", { name: "KC" }).click();
 
   // Check name/email/role visible
-  await expect(page.getByText("name:")).toBeVisible();
-  await expect(page.getByText("email:")).toBeVisible();
+  await expect(page.getByText("name:").first()).toBeVisible();
+  await expect(page.getByText("email:").first()).toBeVisible();
   await expect(page.getByText("role:")).toBeVisible();
 
   // Check order history table is visible if orders exist
