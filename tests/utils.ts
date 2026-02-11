@@ -1,3 +1,4 @@
+// @ts-ignore
 import { test, expect } from "playwright-test-coverage";
 import { Role, User } from "../src/service/pizzaService";
 import { Page } from "@playwright/test";
@@ -105,25 +106,81 @@ export async function basicInit(page: Page) {
 
   // Authorize login for the given user
   await page.route("*/**/api/auth", async (route) => {
-    const loginReq = route.request().postDataJSON();
-    const user = validUsers[loginReq.email];
-    if (!user || user.password !== loginReq.password) {
-      await route.fulfill({ status: 401, json: { error: "Unauthorized" } });
+    const req = route.request().postDataJSON();
+    if (route.request().method() === "POST") {
+      // Registration logic
+      if (!req.email || !req.password || !req.name) {
+        await route.fulfill({ status: 400, json: { error: "Missing fields" } });
+        return;
+      }
+      if (validUsers[req.email]) {
+        await route.fulfill({
+          status: 409,
+          json: { error: "User already exists" },
+        });
+        return;
+      }
+      const newUser: User = {
+        id: Math.floor(Math.random() * 10000).toString(),
+        name: req.name,
+        email: req.email,
+        password: req.password,
+        roles: [{ role: Role.Diner }],
+      };
+      validUsers[req.email] = newUser;
+      loggedInUser = newUser;
+      await route.fulfill({ json: { user: newUser, token: "abcdef" } });
       return;
     }
-    loggedInUser = validUsers[loginReq.email];
-    const loginRes = {
-      user: loggedInUser,
-      token: "abcdef",
-    };
-    expect(route.request().method()).toBe("PUT");
-    await route.fulfill({ json: loginRes });
+    if (route.request().method() === "PUT") {
+      // Login logic
+      const user = validUsers[req.email];
+      if (!user || user.password !== req.password) {
+        await route.fulfill({ status: 401, json: { error: "Unauthorized" } });
+        return;
+      }
+      loggedInUser = validUsers[req.email];
+      const loginRes = {
+        user: loggedInUser,
+        token: "abcdef",
+      };
+      await route.fulfill({ json: loginRes });
+      return;
+    }
   });
 
-  // Return the currently logged in user
   await page.route("*/**/api/user/me", async (route) => {
+    if (route.request().method() === "PUT") {
+      const updateReq = route.request().postDataJSON();
+      if (loggedInUser) {
+        loggedInUser = { ...loggedInUser, ...updateReq };
+      }
+      await route.fulfill({ json: loggedInUser });
+      return;
+    }
+    // GET: return the currently logged in user
     expect(route.request().method()).toBe("GET");
     await route.fulfill({ json: loggedInUser });
+  });
+
+  await page.route(/\/api\/user\/\d+$/, async (route) => {
+    if (route.request().method() === "PUT") {
+      const updateReq = route.request().postDataJSON();
+      if (loggedInUser) {
+        // Remove old email entry if email changed
+
+        if (updateReq.email && updateReq.email !== loggedInUser.email) {
+          delete validUsers[loggedInUser.email as string];
+        }
+        loggedInUser = { ...loggedInUser, ...updateReq };
+        if (loggedInUser) {
+          validUsers[loggedInUser.email as string] = loggedInUser as User;
+        }
+      }
+      await route.fulfill({ json: { user: loggedInUser, token: "abcdef" } });
+      return;
+    }
+    await route.fallback();
   });
 
   // A standard menu

@@ -10,10 +10,9 @@ test("register", async ({ page }) => {
   await page.getByRole("button", { name: "Register" }).click();
 
   // Check that the Register page fields and Register button are still present and enabled
-  await expect(page.getByPlaceholder("Full name")).toBeVisible();
-  await expect(page.getByPlaceholder("Email address")).toBeVisible();
-  await expect(page.getByPlaceholder("Password")).toBeVisible();
-  const registerButton = page.getByRole("button", { name: "Register" });
-  await expect(registerButton).toBeVisible();
-  await expect(registerButton).toBeEnabled();
+  await expect(
+    page.locator(
+      "span.bg-clip-text.bg-gradient-to-tr.from-orange-600.to-orange-400.text-transparent",
+    ),
+  ).toHaveText("The web's best pizza");
 });
