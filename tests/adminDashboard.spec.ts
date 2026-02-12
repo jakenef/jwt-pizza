@@ -73,3 +73,36 @@ test("admin dashboard displays franchises and actions", async ({ page }) => {
   await expect(page.getByRole("button", { name: "«" })).toBeVisible();
   await expect(page.getByRole("button", { name: "»" })).toBeVisible();
 });
+
+test("list and delete users", async ({ page }) => {
+  await adminInit(page);
+  await page.getByRole("link", { name: "Login" }).click();
+  await page.getByRole("textbox", { name: "Email address" }).fill("admin@jwt.com");
+  await page.getByRole("textbox", { name: "Password" }).fill("adminpass");
+  await page.getByRole("button", { name: "Login" }).click();
+  await page.getByRole("link", { name: /admin/i }).click();
+
+  // Assert that the user list is present
+  await expect(page.getByRole("heading", { name: "User List" })).toBeVisible();
+
+  // Assert that at least one user row is present
+  await expect(page.getByTestId("user-row").first()).toBeVisible();
+
+  // Search for a user (simulate search input)
+  await page.getByPlaceholder("Search users...").fill("Test User");
+  await expect(page.getByTestId("user-row").first()).toBeVisible();
+
+  // Click delete on the first user
+  await page.getByTestId("delete-user").first().click();
+
+  // Assert that the deleted user is no longer present
+  await expect(page.getByText("Test User 1")).not.toBeVisible();
+
+  // Test pagination: Next button
+  await page.getByRole("button", { name: "Next" }).click();
+  await expect(page.getByTestId("user-row").first()).toBeVisible();
+
+  // Test pagination: Prev button
+  await page.getByRole("button", { name: "Prev" }).click();
+  await expect(page.getByTestId("user-row").first()).toBeVisible();
+});

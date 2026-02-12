@@ -249,6 +249,34 @@ export async function adminInit(page: Page) {
     },
   };
 
+  // Mock GET /api/user for user listing with enough users for pagination
+  await page.route(/\/api\/user\?page=\d+&limit=\d+&name=.*/, async (route) => {
+    if (route.request().method() === "GET") {
+      const url = route.request().url();
+      const params = new URLSearchParams(url.split("?")[1]);
+      const page = parseInt(params.get("page") || "0");
+      const limit = parseInt(params.get("limit") || "5");
+      const name = params.get("name") || "*";
+      // Generate 12 users for pagination
+      const allUsers = Array.from({ length: 12 }, (_, i) => ({
+        id: `${i + 1}`,
+        name: `Test User ${i + 1}`,
+        email: `user${i + 1}@jwt.com`,
+        roles: [{ role: "diner" }],
+      }));
+      // Filter by name if not wildcard
+      const filtered =
+        name === "*"
+          ? allUsers
+          : allUsers.filter((u) => u.name.includes(name.replace(/\*/g, "")));
+      const users = filtered.slice(page * limit, (page + 1) * limit);
+      const more = (page + 1) * limit < filtered.length;
+      await route.fulfill({ json: { users, more } });
+      return;
+    }
+    await route.fallback();
+  });
+
   // Authorize login for the given user
   await page.route("*/**/api/auth", async (route) => {
     const loginReq = route.request().postDataJSON();

@@ -10,6 +10,7 @@ import {
   Endpoints,
   OrderResponse,
   JWTPayload,
+  UserListResponse,
 } from "./pizzaService";
 
 const pizzaServiceUrl = import.meta.env.VITE_PIZZA_SERVICE_URL;
@@ -101,6 +102,18 @@ class HttpPizzaService implements PizzaService {
     );
     localStorage.setItem("token", token);
     return Promise.resolve(user);
+  }
+
+  async getUsers(
+    page: number,
+    limit: number,
+    name: string = "*",
+  ): Promise<UserListResponse> {
+    const { users, more } = await this.callEndpoint(
+      `/api/user?page=${page}&limit=${limit}&name=${name}`,
+      "GET",
+    );
+    return Promise.resolve({ users, more });
   }
 
   async getMenu(): Promise<Menu> {
