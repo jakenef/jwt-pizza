@@ -22,8 +22,9 @@ test("admin can create a franchise", async ({ page }) => {
   await page.getByRole("button", { name: "Create" }).click();
 
   // Should see new franchise in list (table displays admin names, not emails)
-  await expect(page.locator("table")).toContainText("New Franchise");
-  await expect(page.locator("table")).toContainText("Franchisee Admin");
+  const franchiseTable = page.locator("table").first();
+  await expect(franchiseTable).toContainText("New Franchise");
+  await expect(franchiseTable).toContainText("Franchisee Admin");
 });
 
 test("admin can delete a franchise", async ({ page }) => {
@@ -41,7 +42,8 @@ test("admin can delete a franchise", async ({ page }) => {
   await page.getByRole("button", { name: "Close" }).click();
 
   // Should not see deleted franchise
-  await expect(page.locator("table")).not.toContainText("LotaPizza");
+  const franchiseTable = page.locator("table").first();
+  await expect(franchiseTable).not.toContainText("LotaPizza");
 });
 
 test("admin dashboard displays franchises and actions", async ({ page }) => {
@@ -59,7 +61,8 @@ test("admin dashboard displays franchises and actions", async ({ page }) => {
   await page.getByRole("link", { name: /admin/i }).click();
 
   // Check for franchises table and actions
-  await expect(page.locator("h3")).toHaveText("Franchises");
+  const franchiseTable = page.locator("table").first();
+  await expect(page.getByRole("heading", { name: "Franchises" })).toBeVisible();
   await expect(
     page.getByRole("button", { name: /add franchise/i }),
   ).toBeVisible();
@@ -77,7 +80,9 @@ test("admin dashboard displays franchises and actions", async ({ page }) => {
 test("list and delete users", async ({ page }) => {
   await adminInit(page);
   await page.getByRole("link", { name: "Login" }).click();
-  await page.getByRole("textbox", { name: "Email address" }).fill("admin@jwt.com");
+  await page
+    .getByRole("textbox", { name: "Email address" })
+    .fill("admin@jwt.com");
   await page.getByRole("textbox", { name: "Password" }).fill("adminpass");
   await page.getByRole("button", { name: "Login" }).click();
   await page.getByRole("link", { name: /admin/i }).click();
