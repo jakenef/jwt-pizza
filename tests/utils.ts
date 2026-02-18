@@ -67,6 +67,29 @@ export async function basicInit(page: Page) {
     await route.fulfill({ json: franchise });
   });
 
+  // Mock deleting a user
+  // In-memory user list for deletion
+  let allUsers = Array.from({ length: 12 }, (_, i) => ({
+    id: `${i + 1}`,
+    name: `Test User ${i + 1}`,
+    email: `user${i + 1}@jwt.com`,
+    roles: [{ role: "diner" }],
+  }));
+
+  await page.route(/\/api\/user\/(\d+)$/, async (route) => {
+    const match = route
+      .request()
+      .url()
+      .match(/\/api\/user\/(\d+)$/);
+    const id = match ? match[1] : undefined;
+    if (route.request().method() === "DELETE" && id) {
+      allUsers = allUsers.filter((u) => u.id !== id);
+      await route.fulfill({ status: 200, json: { success: true } });
+      return;
+    }
+    await route.fallback();
+  });
+
   // Mock deleting a store
   await page.route(/\/api\/franchise\/\d+\/store\/\d+$/, async (route) => {
     if (route.request().method() === "DELETE") {
@@ -239,6 +262,18 @@ export async function basicInit(page: Page) {
 
 export async function adminInit(page: Page) {
   let loggedInUser: User | undefined;
+  // In-memory user list for deletion and pagination
+  let allUsers: Array<{
+    id: string;
+    name: string;
+    email: string;
+    roles: Array<{ role: string }>;
+  }> = Array.from({ length: 12 }, (_, i) => ({
+    id: `${i + 1}`,
+    name: `Test User ${i + 1}`,
+    email: `user${i + 1}@jwt.com`,
+    roles: [{ role: "diner" }],
+  }));
   const validUsers: Record<string, User> = {
     "admin@jwt.com": {
       id: "1",
@@ -249,6 +284,21 @@ export async function adminInit(page: Page) {
     },
   };
 
+  // Mock DELETE /api/user/:userId
+  await page.route(/\/api\/user\/(\d+)$/, async (route) => {
+    const match = route
+      .request()
+      .url()
+      .match(/\/api\/user\/(\d+)$/);
+    const id = match ? match[1] : undefined;
+    if (route.request().method() === "DELETE" && id) {
+      allUsers = allUsers.filter((u) => u.id !== id);
+      await route.fulfill({ status: 200, json: { success: true } });
+      return;
+    }
+    await route.fallback();
+  });
+
   // Mock GET /api/user for user listing with enough users for pagination
   await page.route(/\/api\/user\?page=\d+&limit=\d+&name=.*/, async (route) => {
     if (route.request().method() === "GET") {
@@ -257,18 +307,13 @@ export async function adminInit(page: Page) {
       const page = parseInt(params.get("page") || "0");
       const limit = parseInt(params.get("limit") || "5");
       const name = params.get("name") || "*";
-      // Generate 12 users for pagination
-      const allUsers = Array.from({ length: 12 }, (_, i) => ({
-        id: `${i + 1}`,
-        name: `Test User ${i + 1}`,
-        email: `user${i + 1}@jwt.com`,
-        roles: [{ role: "diner" }],
-      }));
       // Filter by name if not wildcard
       const filtered =
         name === "*"
           ? allUsers
-          : allUsers.filter((u) => u.name.includes(name.replace(/\*/g, "")));
+          : allUsers.filter((u: { name: string }) =>
+              u.name.includes(name.replace(/\*/g, "")),
+            );
       const users = filtered.slice(page * limit, (page + 1) * limit);
       const more = (page + 1) * limit < filtered.length;
       await route.fulfill({ json: { users, more } });

@@ -236,10 +236,20 @@ function UserList() {
   }, [search, page]);
 
   function handleDelete(userId: string) {
-    setUserList({
-      ...userList,
-      users: userList.users.filter((u) => u.id !== userId),
-    });
+      (async () => {
+        try {
+          await pizzaService.deleteUser(userId);
+          // Refetch user list from backend to ensure UI is in sync
+          const { users, more } = await pizzaService.getUsers(
+            page,
+            pageSize,
+            search || "*"
+          );
+          setUserList({ users: users ?? [], more: !!more });
+        } catch (e) {
+          console.error('Delete failed', e);
+        }
+      })();
   }
 
   return (
