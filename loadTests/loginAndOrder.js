@@ -53,7 +53,7 @@ export function scenario_1() {
         "upgrade-insecure-requests": "1",
       },
     });
-    sleep(113);
+    sleep(40);
 
     response = http.put(
       "https://pizza-service.jakenef.click/api/auth",
