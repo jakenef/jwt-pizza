@@ -2,7 +2,7 @@
 
 ## Introduction
 
-You just worked a long friday shift that was stressful as an engineer. You come home, finally ready to relax and go to sleep. Suddenly, alarms are blaring and you are summoned out of bed with scary notifications and emails about outages and problems with the system you're in charge of. With a sigh, you open your laptop and rub your bleary eyes because you realize your friday night is now going to be a stressful debugging session instead of a relaxing sleep. I wanted to do a report on Dynatrace because it is a tool that solves this problem-- by using AI to recover from system problems so humans don't even have to be in the loop.
+You just worked a long friday shift that was stressful as an engineer. You come home, finally ready to relax and go to sleep. Suddenly, alarms are blaring and you are summoned out of bed with scary notifications and emails about outages and problems in the system you're in charge of. With a sigh, you open your laptop and rub your bleary eyes because you realize your friday night is now going to be a stressful debugging session instead of a relaxing sleep. I wanted to do a report on Dynatrace because it is a tool that solves this problem-- by using AI to recover from system problems so humans don't even have to be in the loop.
 
 ## What is Dynatrace?
 
