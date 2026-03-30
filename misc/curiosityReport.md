@@ -62,4 +62,4 @@ Dynatrace is a game-changer for on-call engineers. The idea of “waking up to g
 
 ## Conclusion
 
-Dynatrace and Davis AI bring true autonomous remediation to modern operations. By combining full-stack observability, smart root-cause analysis, and safe automation, they help teams sleep better and focus on building, not firefighting. This fits perfectly with what we’ve learned about observability, automation, and incident response—and shows where the future of ops is headed.
+Dynatrace and Davis AI bring true autonomous remediation to modern operations. By combining full-stack observability, smart root-cause analysis, and safe automation, they help teams sleep better and focus on building, not firefighting. This fits perfectly with what we’ve learned about observability, automation, and incident response. It shows where the future of ops is headed.
