@@ -13,7 +13,7 @@ Key points:
 - **Self-Healing Automation**: Dynatrace can trigger a remediation runbook (via Ansible, Terraform, cloud API, etc.), update a ServiceNow ticket, and post Slack/Teams updates, all without human intervention [source](https://www.dynatrace.com/news/blog/automated-remediation-with-ansible-automation/)
 - **Full-Stack Observability**: Dynatrace ingests 100% of telemetry (metrics, logs, traces, events) and uses AI to baseline normal behavior, detect anomalies, and correlate related issues into a single, actionable problem.
 - **Root Cause Analysis**: Instead of just alerting, Davis AI traces through dependencies and uses causal reasoning to identify the true source of an issue, not just the symptoms.
-- **Closed-Loop Remediation**: After a fix, Dynatrace validates if the problem is resolved. If not, it can retry, roll back, or escalate to humans, ensuring issues are actually fixed—not just hidden.
+- **Closed-Loop Remediation**: After a fix, Dynatrace validates if the problem is resolved. If not, it can retry, roll back, or escalate to humans, ensuring issues are actually fixed, not just hidden.
 
 ## How Dynatrace Works
 
